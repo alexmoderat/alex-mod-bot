@@ -1,10 +1,22 @@
 import { ValidationResult, ModerationData, ModerationResult } from './types';
 
 export class TwitchModerationSystem {
-  private twitchApi: any; // Twitch API Wrapper, Typ nach Bedarf anpassen
+  private twitchApi: any;
 
   constructor(twitchApi: any) {
     this.twitchApi = twitchApi;
+  }
+
+  // Beispiel-Validierung: Hier musst du deine Regeln prüfen und ein ValidationResult zurückgeben.
+  private validateMessage(moderationData: ModerationData): ValidationResult {
+    // TODO: Deine Validierungslogik hier
+    // Beispiel: Keine Regelverstoß:
+    return { result: false };
+  }
+
+  public async moderateMessage(moderationData: ModerationData): Promise<ModerationResult> {
+    const validation = this.validateMessage(moderationData);
+    return await this.executeModerationAction(validation, moderationData);
   }
 
   public async executeModerationAction(
