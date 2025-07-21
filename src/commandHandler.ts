@@ -40,7 +40,7 @@ export class CommandHandler {
         try {
             const files = await fs.readdir(this.commandsDir);
             for (const file of files) {
-                if (file.endsWith('.ts')) {
+                if (file.endsWith('.ts') || file.endsWith('.js')) {
                     const commandPath = path.join(this.commandsDir, file);
                     if (process.env.NODE_ENV === 'development') {
                         delete require.cache[require.resolve(commandPath)];
@@ -133,6 +133,7 @@ export class CommandHandler {
             this.setCooldown(command, msg.userInfo.userId, channel);
 
             if (command.reply && result) {
+		console.log(1)
                 await this.chatClient.say(channel, String(result), { replyTo: msg });
             }
 

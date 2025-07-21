@@ -14,7 +14,7 @@
   "keywords": [],
   "author": "Lennox O",
   "license": "ISC",
-  "packageManager": "pnpm@10.11.0",
+  "packageManager": "pnpm@10.12.4+sha512.5ea8b0deed94ed68691c9bad4c955492705c5eeb8a87ef86bc62c74a26b037b08ff9570f108b2e4dbd1dd1a9186fea925e527f141c648e85af45631074680184",
   "dependencies": {
     "@prisma/client": "^6.10.1",
     "@twurple/api": "^7.3.0",
@@ -25,12 +25,14 @@
     "@twurple/eventsub-ws": "^7.3.0",
     "axios": "^1.9.0",
     "dotenv": "^16.5.0",
+    "humanize-duration": "^3.33.0",
     "ioredis": "^5.6.1",
     "redis": "^5.1.1",
     "uuid": "^11.1.0",
     "zod": "^3.25.42"
   },
   "devDependencies": {
+    "@types/humanize-duration": "^3.27.4",
     "@types/node": "^22.15.29",
     "prisma": "^6.10.1",
     "ts-node": "^10.9.2",

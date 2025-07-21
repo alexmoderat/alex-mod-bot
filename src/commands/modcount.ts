@@ -3,16 +3,38 @@ import { CommandDefinition, CommandContext } from '../types';
 import { config } from '../config';
 
 async function getModerationChannels(): Promise<string[]> {
-    try {
-        const response = await axios.get(`https://api.twitch.tv/helix/moderation/channels?user_id=${config.twitch.botUserId}`, {
-            headers: {
-                'Authorization': `Bearer ${config.twitch.accessToken}`,
-                'Client-Id': config.twitch.clientId,
-            },
-        });
+    const channels: string[] = [];
+    let cursor: string | null = null;
+    const limit = 500; // Max insgesamt
+    const pageSize = 100;
 
-        const channels = response.data.data;
-        return channels.map((ch: any) => ch.broadcaster_name); // Je nach API ggf. anpassen
+    try {
+        do {
+            const params = new URLSearchParams({
+                user_id: config.twitch.botUserId,
+                first: pageSize.toString(),
+            });
+
+            if (cursor) {
+                params.append('after', cursor);
+            }
+
+            const response = await axios.get(`https://api.twitch.tv/helix/moderation/channels?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${config.twitch.accessToken}`,
+                    'Client-Id': config.twitch.clientId,
+                },
+            });
+
+            const data = response.data;
+            const fetchedChannels = data.data.map((ch: any) => ch.broadcaster_name);
+            channels.push(...fetchedChannels);
+
+            cursor = data.pagination?.cursor || null;
+
+        } while (cursor && channels.length < limit);
+
+        return channels.slice(0, limit);
     } catch (error: any) {
         console.error('[Twitch API] Error fetching moderation channels:', error.response?.data || error.message);
         return [];

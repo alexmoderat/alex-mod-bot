@@ -44,7 +44,6 @@ async function main() {
         moderatorUserId: config.twitch.botUserId
     });
     console.log('✅ Moderation System initialized with', phrases.length, 'rules');
-    console.log('⚠️  Using temporary access token - please add to config.ts');
 
     chatClient.onMessage(async (channel, user, text, msg) => {
         console.log(`[${channel}] ${user}: ${text}`);

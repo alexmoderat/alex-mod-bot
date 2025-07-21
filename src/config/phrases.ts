@@ -6,17 +6,18 @@ export interface phrase {
 
 export const phrases: phrase[] = [
     {
-        word: "\\b(test123321)\\b",
+        word: "ayri",
         action: 1,
-        reason: "Test"
+        reason: "bitte respektvoll umgehen"
     },
     {
-        word: "\\b(spam|scam)\\b",
+        word: "cheap viewers",
         action: 0,
-        reason: "Spam oder Betrug"
+        reason: "triggered banphrase viewbot service"
     },
     {
-        word: "\\b(toxic|hate)\\b",
+        word: "kdidfneienixne8nf38r"
+,
         action: 300,
         reason: "Toxisches Verhalten - 5 Minuten Timeout"
     },
