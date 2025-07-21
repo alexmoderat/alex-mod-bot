@@ -1,22 +1,35 @@
+import { phrase } from './phrases';
 import { ValidationResult, ModerationData, ModerationResult } from './types';
 
 export class TwitchModerationSystem {
   private twitchApi: any;
+  private phrases: phrase[];
 
-  constructor(twitchApi: any) {
+  constructor(phrases: phrase[], twitchApi: any) {
+    this.phrases = phrases;
     this.twitchApi = twitchApi;
   }
 
-  // Beispiel-Validierung: Hier musst du deine Regeln prüfen und ein ValidationResult zurückgeben.
-  private validateMessage(moderationData: ModerationData): ValidationResult {
-    // TODO: Deine Validierungslogik hier
-    // Beispiel: Keine Regelverstoß:
-    return { result: false };
-  }
-
   public async moderateMessage(moderationData: ModerationData): Promise<ModerationResult> {
-    const validation = this.validateMessage(moderationData);
-    return await this.executeModerationAction(validation, moderationData);
+    const msg = moderationData.message.toLowerCase();
+
+    for (const phrase of this.phrases) {
+      if (msg.includes(phrase.word.toLowerCase())) {
+        const validation: ValidationResult = {
+          result: true,
+          action: phrase.action,
+          reason: phrase.reason
+        };
+
+        return await this.executeModerationAction(validation, moderationData);
+      }
+    }
+
+    return {
+      success: true,
+      action: 'none',
+      reason: 'Keine Regelverstoß erkannt - automated by Alexmoderat'
+    };
   }
 
   public async executeModerationAction(
@@ -33,7 +46,6 @@ export class TwitchModerationSystem {
 
     const { action } = validation;
     const { channelId, userId, messageId } = moderationData;
-
     const reason = (validation.reason ?? 'Regelverstoß') + ' - automated by Alexmoderat';
 
     try {
