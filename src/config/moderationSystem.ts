@@ -1,7 +1,7 @@
 import { ValidationResult, ModerationData, ModerationResult } from './types';
 
-class ModerationSystem {
-  private twitchApi: any; // Hier kannst du deinen TwitchApi-Typ eintragen
+export class TwitchModerationSystem {
+  private twitchApi: any; // Twitch API Wrapper, Typ nach Bedarf anpassen
 
   constructor(twitchApi: any) {
     this.twitchApi = twitchApi;
@@ -76,7 +76,3 @@ class ModerationSystem {
     }
   }
 }
-
-export default ModerationSystem;
-
-
