@@ -38,11 +38,43 @@ async function main() {
     const commandHandler = new CommandHandler(chatClient, apiClient);
     await commandHandler.initialize();
 
-    const moderationSystem = new TwitchModerationSystem(phrases, {
-        clientId: config.twitch.clientId,
-        accessToken: config.twitch.accessToken,
-        moderatorUserId: config.twitch.botUserId
-    });
+    // ➕ Twitch-API-Wrapper für Moderation
+    const twitchApi = {
+        banUser: async (channelId: string, userId: string, reason: string) => {
+            try {
+                await apiClient.moderation.banUser(channelId, config.twitch.botUserId, {
+                    userId,
+                    reason
+                });
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        deleteMessage: async (messageId: string, channelId: string) => {
+            try {
+                await apiClient.moderation.deleteChatMessages(channelId, config.twitch.botUserId, messageId);
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        timeoutUser: async (channelId: string, userId: string, duration: number, reason: string) => {
+            try {
+                await apiClient.moderation.timeoutUser(channelId, config.twitch.botUserId, {
+                    userId,
+                    duration,
+                    reason
+                });
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    };
+
+    // ✅ Korrigierter Konstruktor-Aufruf
+    const moderationSystem = new TwitchModerationSystem(phrases, twitchApi);
     console.log('✅ Moderation System initialized with', phrases.length, 'rules');
 
     chatClient.onMessage(async (channel, user, text, msg) => {
@@ -127,9 +159,7 @@ async function main() {
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
     const channelsFromDB = await prisma.channel.findMany({ 
-        select: { 
-            name: true
-        } 
+        select: { name: true } 
     });
     
     for (const channelData of channelsFromDB) {
