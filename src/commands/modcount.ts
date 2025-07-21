@@ -43,24 +43,15 @@ async function getModerationChannels(): Promise<string[]> {
 
 async function postToPoste(title: string, content: string): Promise<string | null> {
     try {
-        const response = await axios.post('https://api.paste.ee/v1/pastes', {
-            sections: [
-                {
-                    name: title,
-                    syntax: "text",
-                    contents: content
-                }
-            ]
-        }, {
+        const response = await axios.post('https://haste.potat.app/documents', content, {
             headers: {
-                'X-Auth-Token': config.pasteee.apiKey,
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'text/plain',
+            },
         });
 
-        return `https://paste.ee/r/${response.data.id}`;
+        return `https://haste.potat.app/${response.data.key}`;
     } catch (error: any) {
-        console.error('[Poste.ee] Error posting list:', error.response?.data || error.message);
+        console.error('[Haste] Error posting list:', error.response?.data || error.message);
         return null;
     }
 }
@@ -92,3 +83,4 @@ export const command: CommandDefinition = {
         }
     },
 };
+
