@@ -2,7 +2,7 @@ import { config } from '../config';
 import { TwitchConfig } from './types';
 
 export class TwitchAPI {
-        private config: TwitchConfig;
+    private config: TwitchConfig;
 
     constructor(config: TwitchConfig) {
         this.config = config;
@@ -13,20 +13,23 @@ export class TwitchAPI {
      */
     async banUser(channelId: string, userId: string, reason: string): Promise<boolean> {
         try {
-            const response = await fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${config.bot.id}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${config.twitch.accessToken}`,
-                    'Client-Id': config.twitch.clientId,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    data: {
-                        user_id: userId,
-                        reason: reason
-                    }
-                })
-            });
+            const response = await fetch(
+                `https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${this.config.botUserId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.config.accessToken}`,
+                        'Client-Id': this.config.clientId,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: {
+                            user_id: userId,
+                            reason: reason
+                        }
+                    })
+                }
+            );
 
             return response.ok;
         } catch (error) {
@@ -40,21 +43,24 @@ export class TwitchAPI {
      */
     async timeoutUser(channelId: string, userId: string, duration: number, reason: string): Promise<boolean> {
         try {
-            const response = await fetch(`https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${config.bot.id}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${config.twitch.accessToken}`,
-                    'Client-Id': config.twitch.clientId,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    data: {
-                        user_id: userId,
-                        duration: duration,
-                        reason: reason
-                    }
-                })
-            });
+            const response = await fetch(
+                `https://api.twitch.tv/helix/moderation/bans?broadcaster_id=${channelId}&moderator_id=${this.config.botUserId}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.config.accessToken}`,
+                        'Client-Id': this.config.clientId,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data: {
+                            user_id: userId,
+                            duration: duration,
+                            reason: reason
+                        }
+                    })
+                }
+            );
 
             return response.ok;
         } catch (error) {
@@ -67,17 +73,17 @@ export class TwitchAPI {
      * Löscht eine spezifische Nachricht
      */
     async deleteMessage(messageId: string, channelId: string): Promise<boolean> {
-        console.log(messageId, channelId);
         try {
-            const response = await fetch(`https://api.twitch.tv/helix/moderation/chat?broadcaster_id=${channelId}&moderator_id=${config.bot.id}&message_id=${messageId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${config.twitch.accessToken}`,
-                    'Client-Id': config.twitch.clientId,
+            const response = await fetch(
+                `https://api.twitch.tv/helix/moderation/messages?message_id=${messageId}&broadcaster_id=${channelId}&moderator_id=${this.config.botUserId}`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${this.config.accessToken}`,
+                        'Client-Id': this.config.clientId,
+                    }
                 }
-            });
-
-            console.log('Delete message response:', await response.json());
+            );
 
             return response.ok;
         } catch (error) {
