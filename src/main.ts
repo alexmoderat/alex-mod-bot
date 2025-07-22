@@ -1,38 +1,36 @@
 import { ModerationSystem } from './config/moderationSystem';
-import { TwitchApi } from './config/twitchApi';
-import { phrases } from './config/phrases'; // ← korrigierter Import
+import { TwitchAPI } from './config/twitchApi';  // Großes API hier
 import { ChatClient } from '@twurple/chat';
 import { RefreshingAuthProvider } from '@twurple/auth';
 import { PrismaClient } from '@prisma/client';
 import { readFileSync } from 'fs';
-import { TokenData } from './config/types';
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Twitch-Zugangsdaten laden
+// Twitch-Zugangsdaten
 const clientId = process.env.TWITCH_CLIENT_ID!;
 const clientSecret = process.env.TWITCH_CLIENT_SECRET!;
-const tokenData: TokenData = JSON.parse(readFileSync('./tokens.json', 'utf8'));
+const tokenData = JSON.parse(readFileSync('./tokens.json', 'utf8'));
 
+// AuthProvider
 const authProvider = new RefreshingAuthProvider(
-  {
-    clientId,
-    clientSecret
-  },
+  { clientId, clientSecret },
   tokenData
 );
 
-// ChatClient starten
 const chatClient = new ChatClient({
   authProvider,
   channels: ['testaccountalexmoderat']
 });
 
-// Twitch API-Service
-const twitchApi = new TwitchApi(authProvider);
-const moderationSystem = new ModerationSystem(twitchApi);
+// TwitchAPI-Instanz mit config (z.B. aus env oder tokenData)
+const twitchApi = new TwitchAPI({
+  accessToken: tokenData.accessToken,
+  clientId,
+  botUserId: tokenData.userId,
+});
 
-// Prisma DB
+const moderationSystem = new ModerationSystem(twitchApi);
 const prisma = new PrismaClient();
 
 chatClient.onMessage(async (channel, user, message, msg) => {
@@ -40,7 +38,7 @@ chatClient.onMessage(async (channel, user, message, msg) => {
   const result = await moderationSystem.executeModerationAction(validation, {
     channelId: msg.channelId,
     userId: msg.userInfo.userId,
-    messageId: msg.id
+    messageId: msg.id,
   });
 
   if (!result.success && result.error) {
