@@ -6,9 +6,8 @@ import { CommandHandler } from './commandHandler';
 import { config } from './config';
 import prisma from './prismaClient';
 import { setupGlobalErrorHandlers } from './utils/errorHandler';
-import { TwitchModerationSystem } from './config/moderationSystem';
-import { phrases } from './config/phrases';
-import { ModerationData, TwitchConfig } from './config/types';
+import { ModerationSystem } from './config/moderationSystem'; // ✅ Korrigierter Import
+import { ModerationData } from './config/types';
 
 async function main() {
     console.log('Starting Twitch Bot...');
@@ -73,9 +72,9 @@ async function main() {
         }
     };
 
-    // ✅ Korrigierter Konstruktor-Aufruf
-    const moderationSystem = new TwitchModerationSystem(phrases, twitchApi);
-    console.log('✅ Moderation System initialized with', phrases.length, 'rules');
+    // ✅ Richtiger Klassenname + Konstruktor
+    const moderationSystem = new ModerationSystem(twitchApi);
+    console.log('✅ Moderation System initialized');
 
     chatClient.onMessage(async (channel, user, text, msg) => {
         console.log(`[${channel}] ${user}: ${text}`);
@@ -97,12 +96,14 @@ async function main() {
                         messageId: msg.id
                     };
 
-                    const moderationResult = await moderationSystem.moderateMessage(moderationData);
-                    
+                    const moderationResult = await moderationSystem.executeModerationAction(
+                        await moderationSystem.validateMessage(text),
+                        moderationData
+                    );
+
                     if (moderationResult.success && moderationResult.action !== 'none') {
                         console.log(`🔨 Moderation Action executed: ${moderationResult.action.toUpperCase()}`);
                         console.log(`   User: ${user} | Reason: ${moderationResult.reason}`);
-                        
                         if (moderationResult.duration) {
                             console.log(`   Duration: ${moderationResult.duration} seconds`);
                         }
@@ -161,7 +162,7 @@ async function main() {
     const channelsFromDB = await prisma.channel.findMany({ 
         select: { name: true } 
     });
-    
+
     for (const channelData of channelsFromDB) {
         if (!chatClient.currentChannels.includes(`#${channelData.name}`)) {
             console.log(`Attempting to join persisted channel: #${channelData.name}`);
