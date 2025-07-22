@@ -1,5 +1,5 @@
 import { ModerationSystem } from './config/moderationSystem';
-import { TwitchAPI } from './config/twitchApi';  // Großes API hier
+import { TwitchAPI } from './config/twitchAPI';  // Großes API hier
 import { ChatClient } from '@twurple/chat';
 import { RefreshingAuthProvider } from '@twurple/auth';
 import { PrismaClient } from '@prisma/client';

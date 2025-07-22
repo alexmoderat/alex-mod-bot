@@ -1,5 +1,5 @@
 import { phrase } from "./config/phrases";
-import { TwitchAPI } from "./config/twitchApi";
+import { TwitchAPI } from "./config/twitchAPI";
 import { ModerationData, ModerationResult, TwitchConfig, ValidationResult } from "./config/types";
 
 export class TwitchModerationSystem {
