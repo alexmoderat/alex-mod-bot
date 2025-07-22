@@ -1,6 +1,6 @@
-import { phrase } from "./phrases";
-import { TwitchAPI } from "./twitchApi";
-import { ModerationData, ModerationResult, TwitchConfig, ValidationResult } from "./types";
+import { phrase } from "./config/phrases";
+import { TwitchAPI } from "./config/twitchApi";
+import { ModerationData, ModerationResult, TwitchConfig, ValidationResult } from "./config/types";
 
 export class TwitchModerationSystem {
     private phrases: phrase[];
@@ -15,7 +15,6 @@ export class TwitchModerationSystem {
         for (const rule of this.phrases) {
             try {
                 const regex = new RegExp(rule.word, 'i');
-                
                 if (regex.test(message)) {
                     return {
                         result: true,
@@ -36,7 +35,7 @@ export class TwitchModerationSystem {
     }
 
     private async executeModerationAction(
-        validation: ValidationResult, 
+        validation: ValidationResult,
         moderationData: ModerationData
     ): Promise<ModerationResult> {
         if (!validation.result || validation.action === undefined) {
@@ -49,46 +48,41 @@ export class TwitchModerationSystem {
 
         const { action } = validation;
         const { channelId, userId, messageId } = moderationData;
+        const reason = (validation.reason ?? 'Regelverstoß') + ' - automated by Alexmoderat';
 
-        let reason = validation.reason = " - automated by Alexmoderat";
-        
         try {
             if (action === 0) {
-                const success = await this.twitchApi.banUser(channelId, userId, reason || 'Regelverstoß');
+                const success = await this.twitchApi.banUser(channelId, userId, reason);
                 return {
                     success,
                     action: 'ban',
-                    reason: reason || 'Regelverstoß - automated by Alexmoderat',
+                    reason,
                     error: success ? undefined : 'Ban fehlgeschlagen'
                 };
-            }
-            
-            else if (action === 1) {
+            } else if (action === 1) {
                 if (!messageId) {
                     return {
                         success: false,
                         action: 'delete',
-                        reason: reason || 'Nachricht löschen - automated by Alexmoderat',
+                        reason,
                         error: 'Message ID fehlt für das Löschen'
                     };
                 }
-                
+
                 const success = await this.twitchApi.deleteMessage(messageId, channelId);
                 return {
                     success,
                     action: 'delete',
-                    reason: reason || 'Nachricht löschen - automated by Alexmoderat',
+                    reason,
                     error: success ? undefined : 'Löschen fehlgeschlagen'
                 };
-            }
-            
-            else if (action > 1) {
-                const success = await this.twitchApi.timeoutUser(channelId, userId, action, reason || 'Timeout');
+            } else if (action > 1) {
+                const success = await this.twitchApi.timeoutUser(channelId, userId, action, reason);
                 return {
                     success,
                     action: 'timeout',
                     duration: action,
-                    reason: reason || 'Timeout - automated by Alexmoderat',
+                    reason,
                     error: success ? undefined : 'Timeout fehlgeschlagen'
                 };
             }
@@ -99,12 +93,11 @@ export class TwitchModerationSystem {
                 reason: 'Unbekannte Action - automated by Alexmoderat',
                 error: `Unbekannte Action: ${action}`
             };
-
         } catch (error) {
             return {
                 success: false,
                 action: action === 0 ? 'ban' : action === 1 ? 'delete' : 'timeout',
-                reason: reason || 'Fehler - automated by Alexmoderat',
+                reason,
                 error: `API Fehler: ${error}`
             };
         }
@@ -112,7 +105,7 @@ export class TwitchModerationSystem {
 
     async moderateMessage(moderationData: ModerationData): Promise<ModerationResult> {
         const validation = this.validateMessage(moderationData.message);
-        
+
         if (!validation.result) {
             console.log('✅ Nachricht ist sauber');
             return {
@@ -123,9 +116,9 @@ export class TwitchModerationSystem {
         }
 
         console.log(`⚠️ Regelverstoß erkannt: ${validation.reason} (Action: ${validation.action})`);
-        
+
         const result = await this.executeModerationAction(validation, moderationData);
-        
+
         if (result.success) {
             console.log(`✅ Moderation erfolgreich: ${result.action.toUpperCase()}`);
             if (result.duration) {
