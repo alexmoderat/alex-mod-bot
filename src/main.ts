@@ -6,7 +6,8 @@ import { CommandHandler } from './commandHandler';
 import { config } from './config';
 import prisma from './prismaClient';
 import { setupGlobalErrorHandlers } from './utils/errorHandler';
-import { ModerationSystem } from './config/moderationSystem'; // ✅ Korrigierter Import
+import { ModerationSystem } from './config/moderationSystem'; // ⬅️ korrigiert
+import { phrases } from './config/phrases';
 import { ModerationData } from './config/types';
 
 async function main() {
@@ -21,7 +22,6 @@ async function main() {
     }
 
     const authProvider = new StaticAuthProvider(config.twitch.clientId, config.twitch.accessToken);
-
     const apiClient = new ApiClient({ authProvider });
 
     const chatClient = new ChatClient({
@@ -37,14 +37,10 @@ async function main() {
     const commandHandler = new CommandHandler(chatClient, apiClient);
     await commandHandler.initialize();
 
-    // ➕ Twitch-API-Wrapper für Moderation
     const twitchApi = {
         banUser: async (channelId: string, userId: string, reason: string) => {
             try {
-                await apiClient.moderation.banUser(channelId, config.twitch.botUserId, {
-                    userId,
-                    reason
-                });
+                await apiClient.moderation.banUser(channelId, config.twitch.botUserId, { userId, reason });
                 return true;
             } catch {
                 return false;
@@ -72,12 +68,10 @@ async function main() {
         }
     };
 
-    // ✅ Richtiger Klassenname + Konstruktor
-    const moderationSystem = new ModerationSystem(twitchApi);
+    const moderationSystem = new ModerationSystem(twitchApi); // ✅ korrigiert
     console.log('✅ Moderation System initialized');
 
     chatClient.onMessage(async (channel, user, text, msg) => {
-        console.log(`[${channel}] ${user}: ${text}`);
         const channelName = channel.startsWith('#') ? channel.substring(1) : channel;
 
         if (user.toLowerCase() !== config.twitch.botUsername.toLowerCase()) {
@@ -96,10 +90,8 @@ async function main() {
                         messageId: msg.id
                     };
 
-                    const moderationResult = await moderationSystem.executeModerationAction(
-                        await moderationSystem.validateMessage(text),
-                        moderationData
-                    );
+                    const ruleMatch = moderationSystem.validateMessage(text); // ✅ neu
+                    const moderationResult = await moderationSystem.executeModerationAction(ruleMatch, moderationData);
 
                     if (moderationResult.success && moderationResult.action !== 'none') {
                         console.log(`🔨 Moderation Action executed: ${moderationResult.action.toUpperCase()}`);
@@ -159,9 +151,7 @@ async function main() {
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
-    const channelsFromDB = await prisma.channel.findMany({ 
-        select: { name: true } 
-    });
+    const channelsFromDB = await prisma.channel.findMany({ select: { name: true } });
 
     for (const channelData of channelsFromDB) {
         if (!chatClient.currentChannels.includes(`#${channelData.name}`)) {
