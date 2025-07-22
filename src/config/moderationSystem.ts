@@ -1,35 +1,41 @@
-import { ValidationResult, ModerationData, ModerationResult } from '../types';
-import { phrases } from './phrases';              // Passe ggf. den Pfad an
-import { TwitchApiService } from '../services/twitchApi';
+import { phrase } from "./phrases";
+import { TwitchAPI } from "./twitchApi";
+import { ModerationData, ModerationResult, TwitchConfig, ValidationResult } from "./types";
 
-export class ModerationSystem {
-    constructor(private twitchApi: TwitchApiService) {}
+export class TwitchModerationSystem {
+    private phrases: phrase[];
+    private twitchApi: TwitchAPI;
 
-    public validateMessage(message: string): ValidationResult {
-        const lowered = message.toLowerCase();
-
-        for (const phrase of phrases.ban) {
-            if (lowered.includes(phrase.toLowerCase())) {
-                return { result: true, action: 0, reason: `Banned phrase: ${phrase}` };
-            }
-        }
-
-        for (const phrase of phrases.timeout) {
-            if (lowered.includes(phrase.toLowerCase())) {
-                return { result: true, action: 600, reason: `Timeout phrase: ${phrase}` };
-            }
-        }
-
-        for (const phrase of phrases.delete) {
-            if (lowered.includes(phrase.toLowerCase())) {
-                return { result: true, action: 1, reason: `Deleted phrase: ${phrase}` };
-            }
-        }
-
-        return { result: false, action: undefined };
+    constructor(phrases: phrase[], twitchConfig: TwitchConfig) {
+        this.phrases = phrases;
+        this.twitchApi = new TwitchAPI(twitchConfig);
     }
 
-    public async executeModerationAction(
+    private validateMessage(message: string): ValidationResult {
+        for (const rule of this.phrases) {
+            try {
+                const regex = new RegExp(rule.word, 'i');
+                
+                if (regex.test(message)) {
+                    return {
+                        result: true,
+                        action: rule.action,
+                        reason: rule.reason,
+                        matchedPattern: rule.word
+                    };
+                }
+            } catch (error) {
+                console.warn(`Ungültige Regex in Regel: ${rule.word}`, error);
+                continue;
+            }
+        }
+
+        return {
+            result: false
+        };
+    }
+
+    private async executeModerationAction(
         validation: ValidationResult, 
         moderationData: ModerationData
     ): Promise<ModerationResult> {
@@ -44,41 +50,45 @@ export class ModerationSystem {
         const { action } = validation;
         const { channelId, userId, messageId } = moderationData;
 
-        const reason = (validation.reason ?? 'Regelverstoß') + ' - automated by Alexmoderat';
-
+        let reason = validation.reason = " - automated by Alexmoderat";
+        
         try {
             if (action === 0) {
-                const success = await this.twitchApi.banUser(channelId, userId, reason);
+                const success = await this.twitchApi.banUser(channelId, userId, reason || 'Regelverstoß');
                 return {
                     success,
                     action: 'ban',
-                    reason,
+                    reason: reason || 'Regelverstoß - automated by Alexmoderat',
                     error: success ? undefined : 'Ban fehlgeschlagen'
                 };
-            } else if (action === 1) {
+            }
+            
+            else if (action === 1) {
                 if (!messageId) {
                     return {
                         success: false,
                         action: 'delete',
-                        reason,
+                        reason: reason || 'Nachricht löschen - automated by Alexmoderat',
                         error: 'Message ID fehlt für das Löschen'
                     };
                 }
-
+                
                 const success = await this.twitchApi.deleteMessage(messageId, channelId);
                 return {
                     success,
                     action: 'delete',
-                    reason,
+                    reason: reason || 'Nachricht löschen - automated by Alexmoderat',
                     error: success ? undefined : 'Löschen fehlgeschlagen'
                 };
-            } else if (action > 1) {
-                const success = await this.twitchApi.timeoutUser(channelId, userId, action, reason);
+            }
+            
+            else if (action > 1) {
+                const success = await this.twitchApi.timeoutUser(channelId, userId, action, reason || 'Timeout');
                 return {
                     success,
                     action: 'timeout',
                     duration: action,
-                    reason,
+                    reason: reason || 'Timeout - automated by Alexmoderat',
                     error: success ? undefined : 'Timeout fehlgeschlagen'
                 };
             }
@@ -89,13 +99,46 @@ export class ModerationSystem {
                 reason: 'Unbekannte Action - automated by Alexmoderat',
                 error: `Unbekannte Action: ${action}`
             };
+
         } catch (error) {
             return {
                 success: false,
                 action: action === 0 ? 'ban' : action === 1 ? 'delete' : 'timeout',
-                reason,
+                reason: reason || 'Fehler - automated by Alexmoderat',
                 error: `API Fehler: ${error}`
             };
         }
+    }
+
+    async moderateMessage(moderationData: ModerationData): Promise<ModerationResult> {
+        const validation = this.validateMessage(moderationData.message);
+        
+        if (!validation.result) {
+            console.log('✅ Nachricht ist sauber');
+            return {
+                success: true,
+                action: 'none',
+                reason: 'Keine Regelverstoß erkannt - automated by Alexmoderat'
+            };
+        }
+
+        console.log(`⚠️ Regelverstoß erkannt: ${validation.reason} (Action: ${validation.action})`);
+        
+        const result = await this.executeModerationAction(validation, moderationData);
+        
+        if (result.success) {
+            console.log(`✅ Moderation erfolgreich: ${result.action.toUpperCase()}`);
+            if (result.duration) {
+                console.log(`⏱️ Timeout Dauer: ${result.duration} Sekunden`);
+            }
+        } else {
+            console.log(`❌ Moderation fehlgeschlagen: ${result.error}`);
+        }
+
+        return result;
+    }
+
+    getPhrases(): phrase[] {
+        return [...this.phrases];
     }
 }
