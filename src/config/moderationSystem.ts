@@ -1,5 +1,8 @@
-import { ValidationResult, ModerationData, ModerationResult } from '../types'; // ggf. anpassen
-import { TwitchApiService } from '../services/twitchApi'; // ggf. anpassen
+import { ValidationResult, ModerationData, ModerationResult } from '../types';
+import { TwitchApiService } from '../services/twitchApi';
+
+// Beispiel: phrases importieren oder im Konstruktor übergeben (hier importiert)
+import { phrases } from '../config/phrases';
 
 export class ModerationSystem {
     constructor(private twitchApi: TwitchApiService) {}
@@ -72,5 +75,19 @@ export class ModerationSystem {
                 error: `API Fehler: ${error}`
             };
         }
+    }
+
+    // Neue öffentliche Methode für den Aufruf aus main.ts
+    public async moderateMessage(moderationData: ModerationData): Promise<ModerationResult> {
+        // Beispiel-Regel: Prüfe, ob irgendeine Phrase aus `phrases` in der Nachricht enthalten ist
+        const foundPhrase = phrases.find(phrase => moderationData.message.includes(phrase));
+
+        const validation: ValidationResult = {
+            result: !!foundPhrase,
+            action: foundPhrase ? 600 : undefined,  // z.B. 600 Sekunden Timeout
+            reason: foundPhrase ? `Verstoß gegen Phrase: ${foundPhrase}` : undefined
+        };
+
+        return this.executeModerationAction(validation, moderationData);
     }
 }
