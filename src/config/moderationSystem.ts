@@ -1,8 +1,33 @@
 import { ValidationResult, ModerationData, ModerationResult } from '../types';
+import { phrases } from './phrases';              // Passe ggf. den Pfad an
 import { TwitchApiService } from '../services/twitchApi';
 
 export class ModerationSystem {
     constructor(private twitchApi: TwitchApiService) {}
+
+    public validateMessage(message: string): ValidationResult {
+        const lowered = message.toLowerCase();
+
+        for (const phrase of phrases.ban) {
+            if (lowered.includes(phrase.toLowerCase())) {
+                return { result: true, action: 0, reason: `Banned phrase: ${phrase}` };
+            }
+        }
+
+        for (const phrase of phrases.timeout) {
+            if (lowered.includes(phrase.toLowerCase())) {
+                return { result: true, action: 600, reason: `Timeout phrase: ${phrase}` };
+            }
+        }
+
+        for (const phrase of phrases.delete) {
+            if (lowered.includes(phrase.toLowerCase())) {
+                return { result: true, action: 1, reason: `Deleted phrase: ${phrase}` };
+            }
+        }
+
+        return { result: false, action: undefined };
+    }
 
     public async executeModerationAction(
         validation: ValidationResult, 
