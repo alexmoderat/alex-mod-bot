@@ -1,7 +1,3 @@
-Ist es so korrekt? > root@ubuntu-8gb-nbg1-1: /ha X
-
-GNU nano 7.2
-
 export interface Phrase {
 
 word: string;
@@ -28,7 +24,7 @@ reason: "please treat with respect"
 
 phrases.ts
 
-word: "cheap viewers", Best viewers on, smmdex.ru,streamboo .com,NEZHNA.COM, Cheap viewers on, Live Viewers on, Best viewers on
+word: "cheap viewers",
 
 action: 0,
 
