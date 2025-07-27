@@ -1,3 +1,5 @@
+// src/config/phrases.ts
+
 export interface Phrase {
   words: string[];
   action: number;
@@ -12,7 +14,8 @@ export const phrases: Phrase[] = [
       "smmdex.ru",
       "streamboo.com",
       "NEZHNA.COM",
-      "Live Viewers on"
+      "Live Viewers on",
+      "Best viewers on 2222222"
     ],
     action: 0,
     reason: "triggered banphrase viewbot service",
