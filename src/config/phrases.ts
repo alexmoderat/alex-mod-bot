@@ -1,3 +1,9 @@
+export interface Phrase {
+  word: string;
+  action: number;
+  reason: string;
+}
+
 export const phrases: Phrase[] = [
   {
     word: "cheap viewers",
